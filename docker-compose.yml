@@ -1,0 +1,49 @@
+version: "3.9"
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/javascript-node:20
+    volumes:
+      - .:/workspace:cached
+    command: sleep infinity
+    working_dir: /workspace
+    depends_on:
+      - postgres
+      - redis
+      - typesense
+      - mailhog
+
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: atlas
+      POSTGRES_PASSWORD: atlas
+      POSTGRES_DB: atlasdb
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  typesense:
+    image: typesense/typesense:0.25.2
+    restart: unless-stopped
+    environment:
+      TYPESENSE_API_KEY: xyz
+      TYPESENSE_DATA_DIR: /data
+    ports:
+      - "7700:7700"
+    volumes:
+      - typesense-data:/data
+
+  mailhog:
+    image: mailhog/mailhog
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+
+volumes:
+  typesense-data:
