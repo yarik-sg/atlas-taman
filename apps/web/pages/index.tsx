@@ -3,9 +3,6 @@ import { useEffect, useState } from 'react';
 import Head from 'next/head';
 
 import getApiBaseUrl from '../config';
-=======
-import API_BASE_URL from '../config';
-
 
 type Merchant = { id: number; name: string; url: string | null };
 type Offer = {
@@ -19,11 +16,7 @@ type Offer = {
 };
 type Product = { id: number; name: string; description: string | null; offers: Offer[] };
 
-
 const API = getApiBaseUrl();
-=======
-const API = API_BASE_URL;
-
 
 export default function Home() {
   const [q, setQ] = useState('');
