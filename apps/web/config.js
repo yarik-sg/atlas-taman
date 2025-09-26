@@ -1,6 +1,8 @@
 // apps/web/config.js
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  "https://super-duper-tribble-7vj9q9gwpv4jhxxjp-3000.app.github.dev";
+  (process.env.CODESPACE_NAME && process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN
+    ? `https://${process.env.CODESPACE_NAME}-3001.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`
+    : 'http://localhost:3001');
 
 export default API_BASE_URL;
