@@ -1,73 +1,51 @@
 import React, { useEffect, useState } from 'react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL + '/products';
-
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(API_URL)
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`Erreur API: ${res.status} ${res.statusText}`);
-        }
-        return res.json();
-      })
-      .then(data => {
-        setProducts(Array.isArray(data) ? data : []);
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/products`
+        );
+        const data = await res.json();
+        setProducts(data);
+      } catch (err) {
+        console.error('❌ Erreur API /products:', err);
+      } finally {
         setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message);
-        setLoading(false);
-      });
+      }
+    };
+    fetchProducts();
   }, []);
 
-  if (loading) return <div>Chargement...</div>;
-  if (error) return <div style={{color:'red'}}>Erreur : {error}</div>;
+  if (loading) return <p>Chargement des produits...</p>;
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: 20 }}>
-      <h1>Liste des produits</h1>
-      <pre style={{background:'#f8f8f8',padding:10}}>{JSON.stringify(products, null, 2)}</pre>
-      {products.length === 0 ? (
-        <div>Aucun produit trouvé.</div>
-      ) : (
-        products.map((product: any) => (
-          <div key={product.id} style={{ marginBottom: 32, border: '1px solid #eee', borderRadius: 8, padding: 16 }}>
-            <h2>{product.name}</h2>
-            <p>{product.description}</p>
-            <h3>Offres (triées par prix)</h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th>Marchand</th>
-                  <th>Prix</th>
-                  <th>Livraison</th>
-                  <th>Paiement</th>
-                </tr>
-              </thead>
-              <tbody>
-                {product.offers && Array.isArray(product.offers) ?
-                  product.offers
-                    .sort((a: any, b: any) => a.price - b.price)
-                    .map((offer: any) => (
-                      <tr key={offer.id}>
-                        <td><a href={offer.merchant.url} target="_blank" rel="noopener noreferrer">{offer.merchant.name}</a></td>
-                        <td>{offer.price} DH</td>
-                        <td>{offer.deliveryFee ?? '-'} DH</td>
-                        <td>{offer.paymentMethods.join(', ')}</td>
-                      </tr>
-                    ))
-                  : <tr><td colSpan={4}>Aucune offre</td></tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        ))
-      )}
+    <div style={{ padding: '2rem' }}>
+      <h1>📦 Tous les produits</h1>
+      <ul>
+        {products.map((p) => (
+          <li key={p.id} style={{ marginBottom: '2rem' }}>
+            <strong>{p.name}</strong> - {p.description}
+            <ul>
+              {Array.isArray(p.offers) && p.offers.length > 0 ? (
+                p.offers.map((o: any) => (
+                  <li key={o.id}>
+                    {o.merchant.name} : {o.price} MAD (+{o.deliveryFee} MAD livraison)
+                    <br />
+                    Paiement: {o.paymentMethods.join(', ')}
+                  </li>
+                ))
+              ) : (
+                <li>Aucune offre</li>
+              )}
+            </ul>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
