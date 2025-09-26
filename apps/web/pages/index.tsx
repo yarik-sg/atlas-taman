@@ -1,7 +1,7 @@
 // apps/web/pages/index.tsx
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
-import API_BASE_URL from '../config';
+import getApiBaseUrl from '../config';
 
 type Merchant = { id: number; name: string; url: string | null };
 type Offer = {
@@ -15,7 +15,7 @@ type Offer = {
 };
 type Product = { id: number; name: string; description: string | null; offers: Offer[] };
 
-const API = API_BASE_URL;
+const API = getApiBaseUrl();
 
 export default function Home() {
   const [q, setQ] = useState('');
