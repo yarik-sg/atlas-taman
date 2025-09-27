@@ -36,7 +36,11 @@ export default function Home() {
       const json = await res.json();
       setData(json);
     } catch (e: any) {
-      setError(e?.message ?? 'Erreur inconnue');
+      if (e instanceof TypeError || e?.name === 'TypeError') {
+        setError('API indisponible : vérifiez que `pnpm dev:api` tourne sur http://localhost:3001');
+      } else {
+        setError(e?.message ?? 'Erreur inconnue');
+      }
       setData([]);
     } finally {
       setLoading(false);
@@ -69,7 +73,7 @@ export default function Home() {
         </form>
 
         {loading && <p>Chargement...</p>}
-        {error && <p style={{ color: 'crimson' }}>Erreur: {error}</p>}
+        {error && <p style={{ color: 'crimson' }}>{error}</p>}
 
         {!loading && !error && data.length === 0 && <p>Aucun produit.</p>}
 
