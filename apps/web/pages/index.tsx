@@ -1,27 +1,17 @@
 // apps/web/pages/index.tsx
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 
 import getApiBaseUrl from '../config';
-
-type Merchant = { id: number; name: string; url: string | null };
-type Offer = {
-  id: number;
-  price: number;
-  deliveryFee: number | null;
-  paymentMethods: string[];
-  productId: number;
-  merchantId: number;
-  merchant: Merchant;
-};
-type Product = { id: number; name: string; description: string | null; offers: Offer[] };
+import type { ProductWithOffers } from '../types/product';
 
 const API = getApiBaseUrl();
 
 export default function Home() {
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<Product[]>([]);
+  const [data, setData] = useState<ProductWithOffers[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const fetchProducts = async (query?: string) => {
@@ -80,7 +70,11 @@ export default function Home() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 16 }}>
           {data.map((p) => (
             <article key={p.id} style={{ border: '1px solid #eee', borderRadius: 12, padding: 12 }}>
-              <h3 style={{ margin: '0 0 8px' }}>{p.name}</h3>
+              <h3 style={{ margin: '0 0 8px' }}>
+                <Link href={`/products/${p.id}`} style={{ color: '#1d4ed8', textDecoration: 'none' }}>
+                  {p.name}
+                </Link>
+              </h3>
               {p.description && <p style={{ margin: '0 0 12px', color: '#666' }}>{p.description}</p>}
               <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                 {p.offers.map((o) => (
