@@ -8,6 +8,7 @@ describe('ProductsService', () => {
   let prisma: PrismaService;
 
   const findMany = jest.fn();
+  const findUnique = jest.fn();
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -15,7 +16,7 @@ describe('ProductsService', () => {
         ProductsService,
         {
           provide: PrismaService,
-          useValue: { product: { findMany } },
+          useValue: { product: { findMany, findUnique } },
         },
       ],
     }).compile();
@@ -26,6 +27,7 @@ describe('ProductsService', () => {
 
   afterEach(() => {
     findMany.mockReset();
+    findUnique.mockReset();
   });
 
   it('returns all products when no query is provided', () => {
@@ -65,5 +67,23 @@ describe('ProductsService', () => {
       },
       orderBy: { name: 'asc' },
     });
+  });
+
+  it('finds a product by id', async () => {
+    const product = { id: 1, name: 'iPhone 15' };
+    findUnique.mockResolvedValue(product);
+
+    const result = await service.findOne(1);
+
+    expect(prisma.product.findUnique).toHaveBeenCalledWith({
+      where: { id: 1 },
+      include: {
+        offers: {
+          include: { merchant: true },
+          orderBy: { price: 'asc' },
+        },
+      },
+    });
+    expect(result).toBe(product);
   });
 });

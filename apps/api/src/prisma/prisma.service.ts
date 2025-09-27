@@ -13,7 +13,10 @@ try {
 } catch (error) {
   if (process.env.NODE_ENV === 'test') {
     PrismaClient = class {
-      product = { findMany: async () => [] };
+      product = {
+        findMany: async () => [],
+        findUnique: async () => null,
+      };
       async $connect() {}
       async $disconnect() {}
     } as unknown as PrismaClientCtor;

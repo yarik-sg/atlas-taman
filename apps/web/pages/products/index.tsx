@@ -1,4 +1,4 @@
-// apps/web/pages/products.tsx
+// apps/web/pages/products/index.tsx
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 export default function Products() {
