@@ -1,4 +1,4 @@
-import { chromium } from "playwright";
+import { chromium, type Browser } from "playwright";
 
 type Product = {
   title: string;
@@ -8,34 +8,39 @@ type Product = {
 };
 
 async function scrapeJumia(query: string): Promise<Product[]> {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.goto(
-    `https://www.jumia.ma/catalog/?q=${encodeURIComponent(query)}`,
-    { waitUntil: "domcontentloaded" }
-  );
+  let browser: Browser | null = null;
 
-  // attendre que les produits soient rendus
-  await page.waitForSelector(".prd._fb.col.c-prd", { timeout: 10000 });
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.goto(
+      `https://www.jumia.ma/catalog/?q=${encodeURIComponent(query)}`,
+      { waitUntil: "domcontentloaded" }
+    );
 
-  const products: Product[] = await page.$$eval(
-    ".prd._fb.col.c-prd",
-    (els: Element[]) =>
-      els.map((el) => {
-        const title =
-          (el.querySelector(".name")?.textContent || "").trim();
-        const priceTxt =
-          (el.querySelector(".prc")?.textContent || "").replace(/[^\d]/g, "");
-        const price = parseFloat(priceTxt) || 0;
-        const link =
-          "https://www.jumia.ma" +
-          (el.querySelector("a.core")?.getAttribute("href") || "");
-        return { title, priceMad: price, url: link, merchant: "Jumia" };
-      })
-  );
+    // attendre que les produits soient rendus
+    await page.waitForSelector(".prd._fb.col.c-prd", { timeout: 10000 });
 
-  await browser.close();
-  return products;
+    return await page.$$eval(
+      ".prd._fb.col.c-prd",
+      (els: Element[]) =>
+        els.map((el) => {
+          const title =
+            (el.querySelector(".name")?.textContent || "").trim();
+          const priceTxt =
+            (el.querySelector(".prc")?.textContent || "").replace(/[^\d]/g, "");
+          const price = parseFloat(priceTxt) || 0;
+          const link =
+            "https://www.jumia.ma" +
+            (el.querySelector("a.core")?.getAttribute("href") || "");
+          return { title, priceMad: price, url: link, merchant: "Jumia" };
+        })
+    );
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
 }
 
 // si exécuté directement : node/ts-node apps/workers/scrapers/jumia.ts
