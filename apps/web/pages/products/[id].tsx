@@ -1,97 +1,97 @@
-import { useEffect, useMemo, useState } from 'react';
+import type { GetServerSideProps, InferGetServerSidePropsType } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
 
 import getApiBaseUrl from '../../config';
 import type { ProductWithOffers } from '../../types/product';
 
-const API = getApiBaseUrl();
+type ProductDetailProps = {
+  product: ProductWithOffers | null;
+  error?: string | null;
+};
 
-export default function ProductDetail() {
-  const router = useRouter();
-  const { id } = router.query;
-  const [product, setProduct] = useState<ProductWithOffers | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export const getServerSideProps: GetServerSideProps<ProductDetailProps> = async (context) => {
+  const rawId = context.params?.id;
+  const idParam = Array.isArray(rawId) ? rawId[0] : rawId;
 
-  const productId = useMemo(() => {
-    if (!id) return null;
-    if (Array.isArray(id)) return id[0] ?? null;
-    return id;
-  }, [id]);
+  const parsedId = Number(idParam);
+  if (!idParam || Number.isNaN(parsedId) || !Number.isInteger(parsedId) || parsedId <= 0) {
+    context.res.statusCode = 400;
+    return {
+      props: {
+        product: null,
+        error: 'Identifiant de produit invalide.',
+      },
+    };
+  }
 
-  useEffect(() => {
-    if (!router.isReady) return;
-    if (!productId) {
-      setError('Identifiant de produit invalide.');
-      setProduct(null);
-      return;
+  const apiBaseUrl = getApiBaseUrl(context.req);
+  const endpoint = `${apiBaseUrl}/products/${parsedId}`;
+
+  try {
+    const response = await fetch(endpoint, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    });
+
+    if (response.status === 404) {
+      context.res.statusCode = 404;
+      return {
+        props: {
+          product: null,
+          error: 'Produit introuvable.',
+        },
+      };
     }
 
-    const numericId = Number(productId);
-    if (!Number.isInteger(numericId) || numericId <= 0) {
-      setError('Identifiant de produit invalide.');
-      setProduct(null);
-      return;
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
 
-    let aborted = false;
-
-    const fetchProduct = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await fetch(`${API}/products/${numericId}`, {
-          headers: { Accept: 'application/json' },
-        });
-
-        if (res.status === 404) {
-          if (!aborted) {
-            setError('Produit introuvable.');
-            setProduct(null);
-          }
-          return;
-        }
-
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-
-        const json = (await res.json()) as ProductWithOffers;
-        if (!aborted) {
-          setProduct(json);
-        }
-      } catch (e: unknown) {
-        if (aborted) return;
-        if (e instanceof TypeError || (e as { name?: string })?.name === 'TypeError') {
-          setError('API indisponible : vérifiez que `pnpm --filter api dev` tourne sur http://localhost:3001');
-        } else {
-          setError((e as Error)?.message ?? 'Erreur inconnue');
-        }
-        setProduct(null);
-      } finally {
-        if (!aborted) {
-          setLoading(false);
-        }
-      }
+    const product = (await response.json()) as ProductWithOffers;
+    return {
+      props: {
+        product,
+        error: null,
+      },
     };
+  } catch (error) {
+    context.res.statusCode = 502;
+    const isNetworkError =
+      error instanceof TypeError || (error as { name?: string })?.name === 'TypeError';
 
-    fetchProduct();
-
-    return () => {
-      aborted = true;
+    return {
+      props: {
+        product: null,
+        error: isNetworkError
+          ? 'API indisponible : vérifiez que `pnpm --filter api dev` tourne sur http://localhost:3001'
+          : (error as Error)?.message ?? 'Erreur inconnue',
+      },
     };
-  }, [productId, router.isReady]);
+  }
+};
 
+export default function ProductDetail(
+  props: InferGetServerSidePropsType<typeof getServerSideProps>,
+): JSX.Element {
+  const { product, error } = props;
   const title = product ? `${product.name} - Atlas Taman` : 'Produit - Atlas Taman';
 
   const formatMad = (value: number) => value.toLocaleString('fr-MA');
+  const offersCount = product?.offers.length ?? 0;
 
   return (
     <>
       <Head>
         <title>{title}</title>
+        <meta
+          name="description"
+          content={
+            product
+              ? `Comparez les offres pour ${product.name} chez les marchands marocains avec Atlas Taman.`
+              : "Détails d'un produit sur le comparateur de prix Atlas Taman."
+          }
+        />
       </Head>
       <main style={{ maxWidth: 980, margin: '24px auto', padding: '0 16px' }}>
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
@@ -99,14 +99,13 @@ export default function ProductDetail() {
           Retour aux produits
         </Link>
 
-        {loading && <p>Chargement du produit...</p>}
         {error && (
           <p style={{ color: 'crimson', marginTop: 16 }} role="alert">
             {error}
           </p>
         )}
 
-        {!loading && !error && !product && <p>Aucun produit à afficher.</p>}
+        {!error && !product && <p>Aucun produit à afficher.</p>}
 
         {product && (
           <article style={{ border: '1px solid #eee', borderRadius: 12, padding: 24 }}>
@@ -119,10 +118,10 @@ export default function ProductDetail() {
 
             <section>
               <h2 style={{ margin: '0 0 12px', fontSize: '1.25rem' }}>
-                Offres disponibles ({product.offers.length})
+                Offres disponibles ({offersCount})
               </h2>
 
-              {product.offers.length === 0 && <p>Aucune offre pour le moment.</p>}
+              {offersCount === 0 && <p>Aucune offre pour le moment.</p>}
 
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 16 }}>
                 {product.offers.map((offer) => {
