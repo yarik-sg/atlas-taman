@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -9,7 +8,7 @@ export class ProductsService {
   findAll(query?: string) {
     const trimmed = query?.trim();
 
-    const where: Prisma.ProductWhereInput | undefined = trimmed
+    const where = trimmed
       ? {
           OR: [
             { name: { contains: trimmed, mode: 'insensitive' } },
