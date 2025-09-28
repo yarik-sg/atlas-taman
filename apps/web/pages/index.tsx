@@ -46,6 +46,10 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async (cont
     const isNetworkError =
       error instanceof TypeError || (error as { name?: string })?.name === 'TypeError';
 
+    if (context.res) {
+      context.res.statusCode = isNetworkError ? 502 : 500;
+    }
+
     return {
       props: {
         products: [],
