@@ -4,6 +4,6 @@
   "service": "app",
   "workspaceFolder": "/workspace",
   "postCreateCommand": "pnpm install",
-  "forwardPorts": [3000, 4000, 8025, 7700],
+  "forwardPorts": [3000, 3001, 4000, 8025, 7700],
   "remoteUser": "node"
 }
