@@ -18,13 +18,17 @@ const normalizeCodespaceHost = (hostname) => {
   return `https://${normalizedHost}`;
 };
 
+const fromCodespacesEnv = () => {
+  if (process.env.CODESPACE_NAME && process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN) {
+    return `https://${process.env.CODESPACE_NAME}-${DEFAULT_PORT}.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`;
+  }
+
+  return null;
+};
+
 const fromEnv = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
-  }
-
-  if (process.env.CODESPACE_NAME && process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN) {
-    return `https://${process.env.CODESPACE_NAME}-${DEFAULT_PORT}.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`;
   }
 
   if (process.env.VERCEL_URL) {
@@ -85,7 +89,46 @@ const fromRequest = (req) => {
   return `${protocol}://${hostWithoutPort}:${DEFAULT_PORT}`;
 };
 
-const getApiBaseUrl = (req) =>
-  fromEnv() ?? fromRequest(req) ?? fromWindowLocation() ?? `http://localhost:${DEFAULT_PORT}`;
+const fromRequestCodespace = (req) => {
+  if (!req || !req.headers) {
+    return null;
+  }
+
+  const forwardedHost = pickHeader(req.headers["x-forwarded-host"]);
+  const hostHeader = pickHeader(req.headers.host);
+
+  const host = forwardedHost ?? hostHeader;
+  if (!host) {
+    return null;
+  }
+
+  const sanitized = host.split(",")[0]?.trim();
+  if (!sanitized) {
+    return null;
+  }
+
+  const hostWithoutPort = sanitized.includes(":") ? sanitized.split(":")[0] : sanitized;
+
+  return normalizeCodespaceHost(hostWithoutPort);
+};
+
+const fromWindowCodespace = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return normalizeCodespaceHost(window.location.hostname);
+};
+
+const getApiBaseUrl = (req) => {
+  const codespaceUrl =
+    fromRequestCodespace(req) ?? fromWindowCodespace() ?? fromCodespacesEnv();
+
+  if (codespaceUrl) {
+    return codespaceUrl;
+  }
+
+  return fromEnv() ?? fromRequest(req) ?? fromWindowLocation() ?? `http://localhost:${DEFAULT_PORT}`;
+};
 
 export default getApiBaseUrl;
