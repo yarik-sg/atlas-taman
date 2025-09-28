@@ -28,4 +28,16 @@ export class ProductsService {
       orderBy: { name: 'asc' },
     });
   }
+
+  findOne(id: number) {
+    return this.prisma.product.findUnique({
+      where: { id },
+      include: {
+        offers: {
+          include: { merchant: true },
+          orderBy: { price: 'asc' },
+        },
+      },
+    });
+  }
 }
