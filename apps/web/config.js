@@ -2,6 +2,22 @@
 
 const DEFAULT_PORT = process.env.API_PORT ?? '3001';
 
+const normalizeCodespaceHost = (hostname) => {
+  if (
+    !hostname ||
+    (!hostname.endsWith('.app.github.dev') && !hostname.endsWith('.preview.app.github.dev'))
+  ) {
+    return null;
+  }
+
+  const normalizedHost = hostname.replace(
+    /-\d+(?=\.(?:preview\.)?app\.github\.dev$)/,
+    `-${DEFAULT_PORT}`,
+  );
+
+  return `https://${normalizedHost}`;
+};
+
 const fromEnv = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
@@ -29,8 +45,9 @@ const fromWindowLocation = () => {
     return null;
   }
 
-  if (hostname.endsWith('.app.github.dev')) {
-    return `https://${hostname.replace(/-\d+(?=\.app\.github\.dev$)/, `-${DEFAULT_PORT}`)}`;
+  const codespaceUrl = normalizeCodespaceHost(hostname);
+  if (codespaceUrl) {
+    return codespaceUrl;
   }
 
   return `${protocol}//${hostname}:${DEFAULT_PORT}`;
@@ -57,14 +74,15 @@ const fromRequest = (req) => {
     return null;
   }
 
-  if (sanitized.endsWith(".app.github.dev")) {
-    return `https://${sanitized.replace(/-\d+(?=\.app\.github\.dev$)/, `-${DEFAULT_PORT}`)}`;
+  const hostWithoutPort = sanitized.includes(":") ? sanitized.split(":")[0] : sanitized;
+  const codespaceUrl = normalizeCodespaceHost(hostWithoutPort);
+  if (codespaceUrl) {
+    return codespaceUrl;
   }
 
-  const hostname = sanitized.includes(":") ? sanitized.split(":")[0] : sanitized;
   const protocol = forwardedProto ?? "http";
 
-  return `${protocol}://${hostname}:${DEFAULT_PORT}`;
+  return `${protocol}://${hostWithoutPort}:${DEFAULT_PORT}`;
 };
 
 const getApiBaseUrl = (req) =>
