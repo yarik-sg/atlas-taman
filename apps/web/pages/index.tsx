@@ -1,9 +1,9 @@
 import { type FormEvent, useEffect, useState } from 'react';
 import type { GetServerSideProps, InferGetServerSidePropsType } from 'next';
 import Head from 'next/head';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 
+import ProductCard from '../components/ProductCard';
 import getApiBaseUrl from '../config';
 import type { ProductWithOffers } from '../types/product';
 
@@ -140,44 +140,7 @@ export default function Home(
         {!isNavigating && !showError && hasProducts && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 16 }}>
             {products.map((product) => (
-              <article key={product.id} style={{ border: '1px solid #eee', borderRadius: 12, padding: 12 }}>
-                <h3 style={{ margin: '0 0 8px' }}>
-                  <Link href={`/products/${product.id}`} style={{ color: '#1d4ed8', textDecoration: 'none' }}>
-                    {product.name}
-                  </Link>
-                </h3>
-                {product.description && (
-                  <p style={{ margin: '0 0 12px', color: '#666' }}>{product.description}</p>
-                )}
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {product.offers.map((offer) => (
-                    <li key={offer.id} style={{ padding: '6px 0', borderTop: '1px dashed #eee' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                        <div>
-                          <strong>{offer.price.toLocaleString('fr-MA')} MAD</strong>
-                          {typeof offer.deliveryFee === 'number' && (
-                            <span style={{ marginLeft: 8, color: '#666' }}>
-                              + livraison {offer.deliveryFee.toLocaleString('fr-MA')} MAD
-                            </span>
-                          )}
-                          <div style={{ fontSize: 12, color: '#666' }}>
-                            {offer.paymentMethods.join(' · ')}
-                          </div>
-                        </div>
-                        <a
-                          href={offer.merchant?.url ?? '#'}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{ alignSelf: 'center' }}
-                          title={offer.merchant?.name}
-                        >
-                          {offer.merchant?.name ?? 'Marchand'}
-                        </a>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </article>
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}
