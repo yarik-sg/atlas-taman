@@ -2,6 +2,7 @@ import type { GetServerSideProps, InferGetServerSidePropsType } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
 
+import { OfferList } from '../../components/OfferList';
 import getApiBaseUrl from '../../config';
 import type { ProductWithOffers } from '../../types/product';
 
@@ -77,7 +78,6 @@ export default function ProductDetail(
   const { product, error } = props;
   const title = product ? `${product.name} - Atlas Taman` : 'Produit - Atlas Taman';
 
-  const formatMad = (value: number) => value.toLocaleString('fr-MA');
   const offersCount = product?.offers.length ?? 0;
 
   return (
@@ -123,50 +123,11 @@ export default function ProductDetail(
 
               {offersCount === 0 && <p>Aucune offre pour le moment.</p>}
 
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 16 }}>
-                {product.offers.map((offer) => {
-                  const total = offer.price + (offer.deliveryFee ?? 0);
-                  return (
-                    <li
-                      key={offer.id}
-                      style={{
-                        border: '1px solid #f1f1f1',
-                        borderRadius: 12,
-                        padding: 16,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 8,
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <strong style={{ fontSize: '1.1rem' }}>{formatMad(offer.price)} MAD</strong>
-                          {typeof offer.deliveryFee === 'number' && (
-                            <span style={{ marginLeft: 8, color: '#666' }}>
-                              Livraison {formatMad(offer.deliveryFee)} MAD
-                            </span>
-                          )}
-                        </div>
-                        <a
-                          href={offer.merchant?.url ?? '#'}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{ color: '#1d4ed8', textDecoration: 'none' }}
-                          title={offer.merchant?.name ?? 'Marchand'}
-                        >
-                          {offer.merchant?.name ?? 'Marchand'}
-                        </a>
-                      </div>
-                      <div style={{ fontSize: 13, color: '#666' }}>
-                        Moyens de paiement : {offer.paymentMethods.join(' · ')}
-                      </div>
-                      <div style={{ fontSize: 13, color: '#444' }}>
-                        Total estimé : <strong>{formatMad(total)} MAD</strong>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+              <OfferList
+                offers={product.offers}
+                variant="detailed"
+                ariaLabel={`Offres détaillées pour ${product.name}`}
+              />
             </section>
           </article>
         )}
